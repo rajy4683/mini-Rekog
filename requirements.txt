@@ -1,0 +1,9 @@
+# torchsummary
+wandb
+#pandas
+# numpy
+# torch
+# torchvision
+# matplotlib
+albumentations
+plotly>=4.14.3
