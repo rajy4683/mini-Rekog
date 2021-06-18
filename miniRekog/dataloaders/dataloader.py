@@ -5,7 +5,7 @@ import torchvision.transforms as transforms
 from albumentations import (
     HorizontalFlip, Compose, RandomCrop, Cutout,Normalize, 
     HorizontalFlip, RandomBrightnessContrast, CoarseDropout, ToGray,
-    Resize,RandomSizedCrop, MotionBlur,InvertImg, IAAFliplr,
+    Resize,RandomSizedCrop, MotionBlur,InvertImg, IAAFliplr, ShiftScaleRotate,
 	IAAPerspective,
 )
 from albumentations.pytorch import ToTensorV2
@@ -195,6 +195,39 @@ def get_default_transforms_cifar10(seed=0xdeadbeef):
     ),
     ToTensorV2()
     ])
+    return transform_train, transform_test
+
+
+def get_updated_default_transforms_cifar10(seed=0xdeadbeef):
+    torch.manual_seed(seed)
+    transform_train = Compose([
+        HorizontalFlip(p=0.5),
+        ShiftScaleRotate(p=0.5),
+        CoarseDropout(max_holes=1, 
+                    max_height=16,
+                    max_width=16, 
+                    min_holes=1, 
+                    min_height=16, 
+                    min_width=16, 
+                    fill_value=[0.49139968, 0.48215841, 0.44653091], 
+                    mask_fill_value=None, 
+                    always_apply=False, p=0.5),
+        Normalize(
+        mean=[0.49139968, 0.48215841, 0.44653091],
+        std=[0.24703223, 0.24348513, 0.26158784],
+        ),
+        # ToGray(p=1),
+        ToTensorV2()
+    ])
+
+    transform_test = Compose([
+        Normalize(
+        mean=[0.49421428, 0.48513139, 0.45040909],
+        std=[0.24665252, 0.24289226, 0.26159238],
+        ),
+        ToTensorV2()
+    ])
+
     return transform_train, transform_test
 
 
