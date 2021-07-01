@@ -16,6 +16,7 @@ from torch.optim.optimizer import Optimizer
 from torch._six import inf
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
+from fastprogress.fastprogress import master_bar, progress_bar
 
 
 def unnormalize(img_tensor, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
@@ -287,9 +288,13 @@ def train(args, model, device,
           optimizer, scheduler,
           criterion, epoch_number,
           l1_loss=False, l1_beta = 0, 
-          batch_step=False):
+          batch_step=False,
+          masterProgbar=None):
     model.train()
-    pbar = tqdm(train_loader)
+    if masterProgbar is None:
+        pbar = tqdm(train_loader)
+    else:
+        pbar = progress_bar(train_loader, parent=masterProgbar)
     train_loss = 0
     train_accuracy = 0
     for batch_idx, (data, target) in enumerate(pbar):
@@ -312,7 +317,10 @@ def train(args, model, device,
         ### Specifically for CyclicLR. TODO: Add isinstance check for scheduler as well.
         if (batch_step == True and scheduler is not None):
             scheduler.step()
-        pbar.set_description(desc= f'loss={loss.item()} batch_id={batch_idx}')
+        if masterProgbar is None:
+            pbar.set_description(desc= f'loss={loss.item()} batch_id={batch_idx}')
+        else:
+            masterProgbar.child.comment = f'loss={loss.item()} batch_id={batch_idx}'
         train_loss += loss.item()
     
     ### For other LR schedulers
@@ -344,25 +352,31 @@ def test(args, model, device, test_loader, criterion, classes,epoch_number):
     return test_accuracy, test_loss
 
 #optimizer=optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-def execute_model(model_class, hyperparams, 
-                  train_loader, test_loader, device, classes,
+def execute_model(model_class, 
+                  hyperparams, 
+                  train_loader, 
+                  test_loader, 
+                  device,
+                  classes,
                   optimizer_in=optim.SGD, 
-                  wandb = None,
+                  wandb_param = None,
                   criterion=nn.CrossEntropyLoss,
-                  scheduler=None,prev_saved_model=None,
-                  save_best=False, batch_step=False, 
+                  scheduler=None,
+                  prev_saved_model=None,
+                  save_best=False, 
+                  batch_step=False, 
                   lars_mode=False,
                   **kwargs):
     
-    if wandb is None:
+    if wandb_param is None:
         hyperparams.set('run_name',fileutils.rand_run_name())
-        wandb.init(config=hyperparams, project=hyperparams.get('project'))
+        wandb.init(config=hyperparams, project=hyperparams['project'])
     
     #wandb.watch_called = False # Re-run the model without restarting the runtime, 
     # unnecessary after our next release
     config = wandb.config
     model_path = fileutils.generate_model_save_path(rand_string=config.run_name)
-    print("Model will be saved to: ",model_path)
+    print("Model saved to: ",model_path)
     #print("Hyper Params:")
     #print(config)
     use_cuda = not config.no_cuda and torch.cuda.is_available()
@@ -390,26 +404,37 @@ def execute_model(model_class, hyperparams,
         #model = model_class(config.dropout).to(device)
         model = model_class.to(device)
     
-    # summary(model.to(device),input_size=(3, 224, 224))
-    optimizer = optimizer_in#(model.parameters(), lr=config.lr,momentum=config.momentum,
-                           #weight_decay=config.weight_decay) #
-    
-    for epoch in range(1, config.epochs + 1):
+    summary(model.to(device),input_size=(3, 224, 224))
+    optimizer = optimizer_in(model.parameters(), lr=config.lr,momentum=config.momentum,
+                           weight_decay=config.weight_decay) #
+
+    optimizer=optimizer_in(model.parameters(), 
+                        lr=config.lr,
+                        momentum=config.momentum,
+                        weight_decay=config.weight_decay)
+    masterProgbar = master_bar(range(1, config.epochs+1))
+    for epoch in masterProgbar:
         #epoch_train_acc,epoch_train_loss = train(config, model, device, train_loader, optimizer,criterion(), epoch)
 
         epoch_train_acc,epoch_train_loss = train(config, model, device, 
                                                 train_loader, optimizer,scheduler, 
                                                 criterion(), epoch,
-                                                batch_step=batch_step)   
+                                                batch_step=batch_step,
+                                                masterProgbar=masterProgbar)   
         epoch_test_acc,epoch_test_loss = test(config, model, 
                                                 device, test_loader,
                                                 criterion(reduction='sum'), 
-                                                classes,epoch)
+                                                classes,epoch
+                                                )
         last_lr = scheduler.get_last_lr()[0]
-        print('\nEpoch: {:.0f} Train set: Average loss: {:.4f}, Accuracy: {:.3f}%, lr:{}'.format(
-        epoch, epoch_train_loss, epoch_train_acc,last_lr))
-        print('Epoch: {:.0f} Test set: Average loss: {:.4f}, Accuracy: {:.3f}%'.format(
-        epoch, epoch_test_loss, epoch_test_acc))
+        training_results_string = f'Epoch: {epoch:.0f}, Train set:, Average loss: {epoch_train_loss:.4f}, Accuracy: {epoch_train_acc:.3f}%, lr:{last_lr}'
+        test_results_string = f'Epoch: {epoch:.0f}, Test set, Average loss: {epoch_test_loss:.4f}, Accuracy: {epoch_test_acc:.3f}%'
+                                
+        # print('\nEpoch: {:.0f} Train set: Average loss: {:.4f}, Accuracy: {:.3f}%, lr:{}'.format(
+        # epoch, epoch_train_loss, epoch_train_acc,last_lr))
+        # print('Epoch: {:.0f} Test set: Average loss: {:.4f}, Accuracy: {:.3f}%'.format(
+        # epoch, epoch_test_loss, epoch_test_acc))
+        masterProgbar.write(f'{training_results_string}\n{test_results_string}')
         
         wandb.log({ "Train Accuracy": epoch_train_acc, 
                    "Train Loss": epoch_train_loss, 
@@ -419,7 +444,7 @@ def execute_model(model_class, hyperparams,
                    "Learning Rate": last_lr})
         
         if(save_best == True and epoch_test_acc > best_acc):
-            print("Model saved as Test Accuracy increased from ", best_acc, " to ", epoch_test_acc)
+            print(f"Model saved as Test Accuracy increased from {best_acc} to {epoch_test_acc} at epoch {epoch}")
             torch.save({
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
@@ -431,10 +456,9 @@ def execute_model(model_class, hyperparams,
         if (scheduler != None and 
             epoch > config.start_lr and 
             batch_step == False):
-            print("Non CyclicLR Case")
+            # print("Non CyclicLR Case")
             scheduler.step(epoch_test_loss)
         
     print("Final model save path:",model_path," best Accuracy:",best_acc)
     wandb.save(model_path)
-    wandb.finish()
     return model_path
