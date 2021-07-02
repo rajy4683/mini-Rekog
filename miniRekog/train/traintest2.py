@@ -405,14 +405,15 @@ def execute_model(model_class,
         model = model_class.to(device)
     
     summary(model.to(device),input_size=(3, 224, 224))
-    optimizer = optimizer_in(model.parameters(), lr=config.lr,momentum=config.momentum,
-                           weight_decay=config.weight_decay) #
+    optimizer = optimizer_in #(model.parameters(), lr=config.lr,momentum=config.momentum,
+    #                        weight_decay=config.weight_decay) #
 
-    optimizer=optimizer_in(model.parameters(), 
-                        lr=config.lr,
-                        momentum=config.momentum,
-                        weight_decay=config.weight_decay)
-    masterProgbar = master_bar(range(1, config.epochs+1))
+    # optimizer=optimizer_in(model.parameters(), 
+    #                     lr=config.lr,
+    #                     momentum=config.momentum,
+    #                     weight_decay=config.weight_decay)
+    # masterProgbar = master_bar(range(1, config.epochs+1))
+    masterProgbar = range(1, config.epochs+1)
     for epoch in masterProgbar:
         #epoch_train_acc,epoch_train_loss = train(config, model, device, train_loader, optimizer,criterion(), epoch)
 
@@ -420,21 +421,21 @@ def execute_model(model_class,
                                                 train_loader, optimizer,scheduler, 
                                                 criterion(), epoch,
                                                 batch_step=batch_step,
-                                                masterProgbar=masterProgbar)   
+                                                masterProgbar=None)   
         epoch_test_acc,epoch_test_loss = test(config, model, 
                                                 device, test_loader,
                                                 criterion(reduction='sum'), 
                                                 classes,epoch
                                                 )
-        last_lr = scheduler.get_last_lr()[0]
+        last_lr = 0#scheduler.get_last_lr()[0]
         training_results_string = f'Epoch: {epoch:.0f}, Train set:, Average loss: {epoch_train_loss:.4f}, Accuracy: {epoch_train_acc:.3f}%, lr:{last_lr}'
         test_results_string = f'Epoch: {epoch:.0f}, Test set, Average loss: {epoch_test_loss:.4f}, Accuracy: {epoch_test_acc:.3f}%'
                                 
-        # print('\nEpoch: {:.0f} Train set: Average loss: {:.4f}, Accuracy: {:.3f}%, lr:{}'.format(
-        # epoch, epoch_train_loss, epoch_train_acc,last_lr))
-        # print('Epoch: {:.0f} Test set: Average loss: {:.4f}, Accuracy: {:.3f}%'.format(
-        # epoch, epoch_test_loss, epoch_test_acc))
-        masterProgbar.write(f'{training_results_string}\n{test_results_string}')
+        print('\nEpoch: {:.0f} Train set: Average loss: {:.4f}, Accuracy: {:.3f}%, lr:{}'.format(
+        epoch, epoch_train_loss, epoch_train_acc,last_lr))
+        print('Epoch: {:.0f} Test set: Average loss: {:.4f}, Accuracy: {:.3f}%'.format(
+        epoch, epoch_test_loss, epoch_test_acc))
+        # masterProgbar.write(f'{training_results_string}\n{test_results_string}')
         
         wandb.log({ "Train Accuracy": epoch_train_acc, 
                    "Train Loss": epoch_train_loss, 
