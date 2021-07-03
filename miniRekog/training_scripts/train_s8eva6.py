@@ -36,34 +36,6 @@ def main():
     print("Initializing datasets and dataloaders")
 
     torch.manual_seed(config['seed'])
-    # transform_train = Compose([
-        
-    #     HorizontalFlip(p=0.5),
-    #     ShiftScaleRotate(p=0.5),
-    #     CoarseDropout(max_holes=1, 
-    #                 max_height=16,
-    #                 max_width=16, 
-    #                 min_holes=1, 
-    #                 min_height=16, 
-    #                 min_width=16, 
-    #                 fill_value=[0.49139968, 0.48215841, 0.44653091], 
-    #                 mask_fill_value=None, 
-    #                 always_apply=False, p=0.5),
-    #     Normalize(
-    #     mean=[0.49139968, 0.48215841, 0.44653091],
-    #     std=[0.24703223, 0.24348513, 0.26158784],
-    #     ),
-    #     # ToGray(p=1),
-    #     ToTensorV2()
-    # ])
-
-    # transform_test = Compose([
-    #     Normalize(
-    #     mean=[0.49421428, 0.48513139, 0.45040909],
-    #     std=[0.24665252, 0.24289226, 0.26159238],
-    #     ),
-    #     ToTensorV2()
-    # ])
     transform_train = Compose([
 
         RandomCrop(28,28,p=1,always_apply=True),

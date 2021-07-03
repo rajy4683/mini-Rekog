@@ -7,3 +7,4 @@ wandb
 # matplotlib
 albumentations
 plotly>=4.14.3
+fastprogress
