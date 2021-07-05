@@ -16,6 +16,7 @@ from torch.optim.optimizer import Optimizer
 from torch._six import inf
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
+from ..utils.lrfinderutils import LRFinder
 from fastprogress.fastprogress import master_bar, progress_bar
 
 
@@ -43,6 +44,34 @@ def show_misclassfied_images_classwise(model, imageloader, classes):
             plt.imshow(unnormalize(error_images[pos].cpu()))
             ax.set(ylabel="Pred="+classes[np.int(preds[pos])], xlabel="Actual="+classes[np.int(actuals[pos])])
     return error_images, preds, actuals
+
+def find_lr_type2(model, optimizer, criterion, trainloader, testloader, seed=1, start_lr=0.0001, end_lr=100, step_mode="exp",num_iter=500):
+    torch.manual_seed(1)
+    lr_finder = LRFinder(model, optimizer, criterion, device="cuda")
+    #lr_finder.range_test(imageloader, end_lr=100, num_iter=500, step_mode="exp")
+    lr_finder.range_test(trainloader, val_loader=testloader, end_lr=100, num_iter=100, step_mode="exp")
+    min_loss = np.min(lr_finder.history['loss'])
+    min_lr = lr_finder.history['lr'][np.argmin(lr_finder.history['loss'])]
+    max_lr = np.max(lr_finder.history['lr'])
+    
+    print("Min loss:{} Min LR:{} Max LR:{}".format(min_loss, min_lr, max_lr))
+    lr_finder.plot()
+    lr_finder.reset()
+    return lr_finder
+
+def find_lr_type1(model, optimizer, criterion, imageloader, testloader=None, seed=1, start_lr=0.0001, end_lr=100, step_mode="exp",num_iter=500):
+    torch.manual_seed(1)
+    lr_finder = LRFinder(model, optimizer, criterion, device="cuda")
+    lr_finder.range_test(imageloader, val_loader=testloader, start_lr=start_lr, end_lr=end_lr, num_iter=num_iter, step_mode="exp")
+    min_loss = np.min(lr_finder.history['loss'])
+    min_lr = lr_finder.history['lr'][np.argmin(lr_finder.history['loss'])]
+    max_lr = np.max(lr_finder.history['lr'])
+    
+    print("Min loss:{} Min LR:{} Max LR:{}".format(min_loss, min_lr, max_lr))
+    lr_finder.plot()
+    lr_finder.reset()
+
+    return lr_finder
 
 
 def show_misclassfied_images(model, imageloader, classes):
