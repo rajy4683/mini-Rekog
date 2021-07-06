@@ -104,7 +104,8 @@ def main():
                 scheduler=scheduler,
                 prev_saved_model=saved_model_path,
                 criterion=criterion,
-                save_best=True)
+                save_best=True,
+                batch_step=True)
 
 
 if __name__ == '__main__':
