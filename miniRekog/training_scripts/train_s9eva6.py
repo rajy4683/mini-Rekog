@@ -45,7 +45,7 @@ def main():
         Cutout(1, 8,8,
             fill_value=[0.49139968*255, 0.48215841*255, 0.44653091*255],
             always_apply=False, p=1),
-        Rotate(5, p=1),
+        HorizontalFlip(p=0.5),
         Normalize(
         mean=[0.49139968, 0.48215841, 0.44653091],
         std=[0.24703223, 0.24348513, 0.26158784],
