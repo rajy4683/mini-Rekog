@@ -31,6 +31,8 @@ from albumentations.pytorch import ToTensorV2
 saved_model_path=None
 def main():
     global config
+    for k,v in config.get_dict().items():
+        print(f"{k}: {v}")
     device = torch.device("cuda" if not config['no_cuda'] else "cpu")
     
     print("Initializing datasets and dataloaders")
@@ -124,8 +126,8 @@ if __name__ == '__main__':
         #print(config['lr'])
         for key,val in arg_val_dict.items():
             print("Setting ",key," = ",val)
-            config[key]=val
+            config.set(key,val)
         print("Final Hyperparameters")
-        print(config.get_dict())
+
         main()
     #return
