@@ -456,7 +456,7 @@ def execute_model(model_class,
                                                 criterion(reduction='sum'), 
                                                 classes,epoch
                                                 )
-        last_lr = 0#scheduler.get_last_lr()[0]
+        last_lr = scheduler.get_last_lr()[0]
         training_results_string = f'Epoch: {epoch:.0f}, Train set:, Average loss: {epoch_train_loss:.4f}, Accuracy: {epoch_train_acc:.3f}%, lr:{last_lr}'
         test_results_string = f'Epoch: {epoch:.0f}, Test set, Average loss: {epoch_test_loss:.4f}, Accuracy: {epoch_test_acc:.3f}%'
                                 
