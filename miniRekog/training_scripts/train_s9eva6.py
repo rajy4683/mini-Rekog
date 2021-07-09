@@ -41,11 +41,12 @@ def main():
     transform_train = Compose([
         PadIfNeeded(min_height=40, min_width=40,p=1,always_apply=True),
         RandomCrop(32,32,p=1,always_apply=True),
+        HorizontalFlip(p=0.5),
         # PadIfNeeded(min_height=32, min_width=32,p=1,always_apply=True),
         Cutout(1, 8,8,
             fill_value=[0.49139968*255, 0.48215841*255, 0.44653091*255],
             always_apply=False, p=1),
-        HorizontalFlip(p=0.5),
+        
         Normalize(
         mean=[0.49139968, 0.48215841, 0.44653091],
         std=[0.24703223, 0.24348513, 0.26158784],
