@@ -20,6 +20,7 @@ import pandas as pd
 from torchvision import datasets
 from torch.utils.data import Dataset
 from PIL import Image
+import imgnetloader
 
 if sys.version_info[0] == 2:
     import cPickle as pickle
@@ -279,3 +280,35 @@ def get_train_test_dataloader_cifar10(transform_train=None,
                                 shuffle=False, 
                                 num_workers=2)
     return trainloader, testloader    
+
+
+def get_imagenet_loaders(train_path, 
+                         test_path,
+                         config=None,
+                         transform_train=None, 
+                         transform_test=None,
+                         seed=0xdeadbeef):
+    '''
+    Returns custom imagenet loader given the train and test path where the imagenet data is stored.
+
+    '''
+    torch.manual_seed(seed)
+    
+    train_data, test_data = imgnetloader.generate_timgnet_train_test_data(train_path, 
+                                                                          0.7,
+                                                                          transform_train, 
+                                                                          transform_test)
+    print(train_data.transform, test_data.transform)
+
+    kwargs = {'num_workers': 2, 'pin_memory': True}
+    trainloader = torch.utils.data.DataLoader(train_data, 
+                                              batch_size=config.get('batch_size'),
+                                              shuffle=True,
+                                              **kwargs)
+    testloader = torch.utils.data.DataLoader(test_data,
+                                             batch_size=config.get('batch_size'),
+                                             shuffle=True,
+                                             **kwargs)
+    
+    return trainloader, testloader
+    
