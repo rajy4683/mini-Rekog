@@ -20,7 +20,7 @@ import pandas as pd
 from torchvision import datasets
 from torch.utils.data import Dataset
 from PIL import Image
-import imgnetloader
+from . import imgnetloader
 
 if sys.version_info[0] == 2:
     import cPickle as pickle

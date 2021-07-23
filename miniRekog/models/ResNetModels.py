@@ -112,30 +112,45 @@ class ResNet(nn.Module):
         out = self.linear(out)
         return out
 
-def ResNet18():
+def ResNet18(num_classes=10):
     """
         Returns the Resnet18 model
     """
-    return ResNet(BasicBlock, [2, 2, 2, 2])
+    return ResNet(BasicBlock, 
+                  [2, 2, 2, 2],
+                  num_classes=num_classes)
+
+# def ResNet18():
+#     """
+#         Returns the Resnet18 model
+#     """
+#     return ResNet(BasicBlock, [2, 2, 2, 2])
     # return ResNet(BasicLNBlock, [2, 2, 2, 2])
 
-def ResNet34():
+def ResNet34(num_classes=10):
     """
         Returns the Resnet34 model
     """
-    return ResNet(BasicBlock, [2, 2, 2, 2])
+    return ResNet(BasicBlock, 
+                  [3,4,6,3], 
+                  num_classes=num_classes)
 
-def ResNetLN18():
+def ResNetLN18(num_classes=10):
     """
         Returns the Resnet18 model
     """
-    return ResNet(BasicLNBlock, [2, 2, 2, 2], norm_type="LN")
+    return ResNet(BasicLNBlock, 
+                  [2, 2, 2, 2], 
+                  num_classes=num_classes,
+                  norm_type="LN")
 
-def ResNetLN34():
+def ResNetLN34(num_classes=10):
     """
         Returns the Resnet34 model
     """
-    return ResNet(BasicLNBlock, [2, 2, 2, 2], norm_type="LN")
+    return ResNet(BasicLNBlock,[3,4,6,3], 
+                  num_classes=num_classes,
+                  norm_type="LN")
 
 
 
@@ -226,7 +241,7 @@ class S8ResNet(nn.Module):
             nn.ReLU()
         )
         self.layer3 = ModifiedResBlock(self.in_planes*4, self.in_planes*8, 1)
-        self.layer4_supermax = nn.MaxPool2d(4,4)
+        self.layer4_supermax = nn.MaxPool2d(8,8)
         self.fc_layer = nn.Linear(512, num_classes)
 
     def forward(self, x):

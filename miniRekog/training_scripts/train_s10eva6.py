@@ -5,7 +5,7 @@ import numpy as np
 
 sys.path.append('/content/mini-Rekog/')
 from miniRekog.config.config import config
-from miniRekog.models.ResNetModels import ResNet18
+from miniRekog.models.ResNetModels import ResNet18, S8ResNet
 from miniRekog.utils import fileutils
 from miniRekog.dataloaders import dataloader
 from miniRekog.train.traintest2 import execute_model
@@ -85,10 +85,14 @@ def main():
         ),
         ToTensorV2()
     ])
-    trainloader, testloader = dataloader.get_imagenet_loaders(transform_train=transform_train, 
+    train_path = "/content/t2/"
+    test_path="/content/t2/val"
+    trainloader, testloader = dataloader.get_imagenet_loaders(train_path,
+                                                              test_path,
+                                                              transform_train=transform_train, 
                                                               transform_test=transform_test,
                                                               config=config)
-    model_new = ResNet18()
+    model_new = S8ResNet(num_classes=200)
    
     optimizer=optim.SGD(model_new.parameters(), 
                         lr=config.lr,
